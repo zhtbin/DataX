@@ -2,6 +2,7 @@ package com.alibaba.datax.plugin.rdbms.util;
 
 import com.alibaba.datax.common.util.RangeSplitUtil;
 import org.apache.commons.lang3.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
 
 import java.math.BigInteger;
 import java.util.ArrayList;
@@ -11,8 +12,39 @@ public final class RdbmsRangeSplitWrap {
 
     public static List<String> splitAndWrap(String left, String right, int expectSliceNumber,
                                             String columnName, String quote, DataBaseType dataBaseType) {
-        String[] tempResult = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+        String[] tempResult = null;
+        if(isLongAsString(left, right)){// 纯数值的字符串
+            tempResult = longAsString(left, right, expectSliceNumber);
+        }else{
+            tempResult = RangeSplitUtil.doAsciiStringSplit(left, right, expectSliceNumber);
+        }
         return RdbmsRangeSplitWrap.wrapRange(tempResult, columnName, quote, dataBaseType);
+    }
+
+    /**
+     *
+     * @param left
+     * @param right
+     * @return
+     */
+    public static boolean isLongAsString(String left, String right){
+        return NumberUtils.isNumber(left) && NumberUtils.isNumber(right);
+    }
+
+    /**
+     *
+     * @param left
+     * @param right
+     * @param expectSliceNumber
+     * @return
+     */
+    public static String[] longAsString(String left, String right, int expectSliceNumber){
+        long[] tempResult = RangeSplitUtil.doLongSplit(Long.valueOf(left), Long.valueOf(right), expectSliceNumber);
+        String[] tempStrResult = new String[tempResult.length];
+        for(int i=0; i<tempResult.length; i++){
+            tempStrResult[i] = String.valueOf(tempResult[i]);
+        }
+        return tempStrResult;
     }
 
     // warn: do not use this method long->BigInteger
